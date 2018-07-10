@@ -1,3 +1,6 @@
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
 /*
  * MIT License
  * Copyright (c) 2018 Luke Davison
@@ -24,9 +27,23 @@ public class Noise
 	
 	private static int p [ ] = new int [ 512 ];	//	512 to prevent overflow
 	
+	public static void Shuffle () 
+	{
+		Random rand = ThreadLocalRandom.current();
+		
+		for ( int i = p.length - 1; i > 0; i-- ) 
+		{
+			int j = rand.nextInt(i + 1);
+			
+			int a = p[i];
+			p [i] = p[j];
+			p [j] = a;
+		}
+	}
+	
 	private static double Lerp ( double a, double b, double delta ) 
 	{
-		return ( 1 - delta ) * a + delta * b;
+		return (( 1 - delta ) * a + delta * b);
 	}
 	
 	private static double Fade ( double t ) 
@@ -75,7 +92,7 @@ public class Noise
 		double g2 = Gradient ( h2, x, y - 1 );
 		double g3 = Gradient ( h3, x - 1, y - 1 );
 		
-		return ( Lerp ( Lerp ( g0, g1, u ), Lerp ( g2, g3, u ), v ) - 1 );
+		return ( ( Lerp ( Lerp ( g0, g1, u ), Lerp ( g2, g3, u ), v ) - 1 ) / 2 );
 	}
 	
 	static { for ( int i = 0; i < 256; i++ ) p [ 256 + i ] = p [ i ] = permutation [ i ]; }
