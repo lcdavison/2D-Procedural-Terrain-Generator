@@ -92,7 +92,7 @@ public class Noise
 		double g2 = Gradient ( h2, x, y - 1 );
 		double g3 = Gradient ( h3, x - 1, y - 1 );
 		
-		return ( ( Lerp ( Lerp ( g0, g1, u ), Lerp ( g2, g3, u ), v ) - 1 ) / 2 );
+		return ( Lerp ( Lerp ( g0, g1, u ), Lerp ( g2, g3, u ), v ) );
 	}
 	
 	static { for ( int i = 0; i < 256; i++ ) p [ 256 + i ] = p [ i ] = permutation [ i ]; }

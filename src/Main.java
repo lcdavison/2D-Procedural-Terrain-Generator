@@ -27,6 +27,12 @@ public class Main extends Application
 	private Canvas canvas;
 	private ImageView view;
 	
+	private int MapWidth = 500;
+	private int MapHeight = 500;
+	
+	private int IslandDensity = 5;
+	private int IslandHeight = 2;
+	
 	public static void main ( String args [] ) 
 	{
 		launch ( args );
@@ -58,7 +64,7 @@ public class Main extends Application
 		layout.add ( canvas, 1, 1 );
 		layout.add ( generate_map, 2, 1);
 		
-		layout.setGridLinesVisible ( true );
+		//layout.setGridLinesVisible ( true );
 		
 		primaryStage.setScene ( new Scene ( layout, 1280, 720 ) );
 		primaryStage.show ( );
@@ -78,19 +84,16 @@ public class Main extends Application
 			{
 				double dx = ( double ) x / w;
 				double dy = ( double ) y / h;
-				double val = 3 * Noise.Perlin ( 3 * dx, 3 * dy );
+				double val = IslandHeight * Noise.Perlin ( IslandDensity * dx, IslandDensity * dy );
 
-				double r = val * 0xFF,
-				g =  val * 0x0,
-				b =  val * 0x0,
-				a = r + g + b * 0xFF;
+				val = ( val - 1 ) / 2;
 				
-				byte red = (byte) ( (int) r & 0xFF ), green = (byte) ( (int) g & 0xFF ), blue = (byte) ( (int) b & 0xFF ), alpha = (byte) ( (int) a & 0xFF );
-				int final_val = ( red << 24 ) | ( green << 16 ) | ( blue << 8 ) | ( alpha );
-				
-				gc.getPixelWriter().setArgb(x, y, final_val);
-				
-				//bi.setRGB(x, y, final_val);
+				if ( val < 0 )
+					gc.getPixelWriter().setColor(x, y, Color.BLUE);		// Blue Color = Water
+				else if ( val > 0.5 )
+					gc.getPixelWriter().setColor(x, y, Color.GREEN);	//	Green Color = Grass
+				else if ( val > 0 )
+					gc.getPixelWriter().setColor(x, y, Color.YELLOW);	// Yellow Color = Sand
 			}
 		
 		//Image image = SwingFXUtils.toFXImage(bi, null);
