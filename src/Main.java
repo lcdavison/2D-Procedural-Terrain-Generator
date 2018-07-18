@@ -4,7 +4,14 @@
  * See LICENSE for details.
  */
 
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -14,8 +21,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class Main extends Application
@@ -60,7 +69,7 @@ public class Main extends Application
 			@Override
 			public void handle ( ActionEvent event ) 
 			{
-				SaveToFile ( canvas );
+				SaveToFile ( canvas, primaryStage );
 			}
 		});
 		
@@ -120,10 +129,10 @@ public class Main extends Application
 				double dy = ( double ) y / h;
 
 				double val = IslandSize * Noise.Perlin( IslandDensity * dx, IslandDensity * dy ) 
-						+ ( IslandSize * dx ) * Noise.Perlin ( IslandDensity * dx, IslandDensity * dy ) 
-						+ ( IslandSize * dx ) * Noise.Perlin( IslandDensity * dx, IslandDensity * dy );
+						+ ( IslandSize ) * Noise.Perlin ( IslandDensity * 0.25, IslandDensity * 0.5 ) 
+						+ ( IslandSize ) * Noise.Perlin( IslandDensity * 0.25, IslandDensity * 0.25 );
 				
-				val = ( val + 1 ) / 2;
+				val = ( val + 0.25 ) / 2;
 
 				if ( val < 0.1 )
 					gc.getPixelWriter().setColor(x, y, Color.AQUA);			//	Aqua Color = Water
@@ -159,8 +168,29 @@ public class Main extends Application
 			IslandSize = Float.parseFloat ( txt_island_size.getText (  ) );
 	}
 	
-	private void SaveToFile ( Canvas terrain_canvas ) 
+	private void SaveToFile ( Canvas terrain_canvas, Stage primary_stage ) 
 	{
+		FileChooser file_chooser = new FileChooser (  );
 		
+		FileChooser.ExtensionFilter png_filter = new FileChooser.ExtensionFilter ( "PNG Files (*.png)", "*.png" );
+		file_chooser.getExtensionFilters (  ).add ( png_filter );
+		
+		File file = file_chooser.showSaveDialog ( primary_stage );
+		
+		if ( file != null )
+		{
+			try 
+			{
+				WritableImage wi = new WritableImage ( MapWidth, MapHeight );
+				terrain_canvas.snapshot ( null, wi );
+				
+				RenderedImage ri = SwingFXUtils.fromFXImage ( wi, null );
+				ImageIO.write ( ri, "png", file );
+			} 
+			catch (IOException e) 
+			{
+				e.printStackTrace();
+			}
+		}
 	}
 }
