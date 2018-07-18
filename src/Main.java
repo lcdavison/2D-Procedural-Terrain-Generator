@@ -2,22 +2,18 @@
  * MIT License
  * Copyright (c) 2018 Luke Davison
  * See LICENSE for details.
-*/
-
-import java.awt.MouseInfo;
-import java.awt.image.BufferedImage;
+ */
 
 import javafx.application.Application;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.input.*;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -25,14 +21,18 @@ import javafx.stage.Stage;
 public class Main extends Application
 {
 	private Canvas canvas;
-	private ImageView view;
 	
+	private TextField txt_map_height, txt_map_width;
+	private TextField txt_island_density, txt_island_size;
+	
+	private CheckBox chk_use_snow;
+
 	private int MapWidth = 500;
 	private int MapHeight = 500;
-	
-	private int IslandDensity = 5;
-	private int IslandHeight = 2;
-	
+
+	private float IslandDensity = 1;
+	private float IslandSize = 1;
+
 	public static void main ( String args [] ) 
 	{
 		launch ( args );
@@ -42,61 +42,125 @@ public class Main extends Application
 	public void start ( Stage primaryStage ) throws Exception 
 	{	
 		primaryStage.setTitle ( "2D Terrain Generator" );
-		
+
 		canvas = new Canvas ( 500, 500 );				//	Draw Map To This
-		view = new ImageView ();
-		view.setFitWidth(500);
-		view.setFitHeight(500);
-		
-		Button generate_map = new Button ( "Generate Map" );	//	Generate Random Map
-		generate_map.setOnAction ( new EventHandler <ActionEvent> () 
+
+		Button btn_generate_map = new Button ( "Generate Map" );	//	Generate Random Map
+		btn_generate_map.setOnAction ( new EventHandler <ActionEvent> () 
 		{
 			@Override
-			public void handle(ActionEvent event) 
+			public void handle ( ActionEvent event ) 
 			{
 				CreateMap ( canvas.getGraphicsContext2D() );
 			}
 		});
 		
+		Button btn_save_terrain = new Button ( "Save Terrain" );
+		btn_save_terrain.setOnAction ( new EventHandler <ActionEvent> () {
+			@Override
+			public void handle ( ActionEvent event ) 
+			{
+				SaveToFile ( canvas );
+			}
+		});
+		
+		Label lbl_map_height = new Label ( "Map Height :" );
+		txt_map_height = new TextField (  );
+		
+		Label lbl_map_width = new Label ( "Map Width :" );
+		txt_map_width = new TextField (  );
+
+		Label lbl_island_density = new Label ( "Island Density :" );
+		txt_island_density = new TextField (  );
+		
+		Label lbl_island_size = new Label ( "Island Size :" );
+		txt_island_size = new TextField (  );
+
 		GridPane layout = new GridPane (  );
 		layout.setHgap ( 10 );
 		layout.setVgap ( 10 );
-		layout.add ( canvas, 1, 1 );
-		layout.add ( generate_map, 2, 1);
+		layout.add ( canvas, 0, 0 );
 		
+		layout.add ( lbl_map_height, 2, 1 );
+		layout.add ( txt_map_height, 3, 1 );
+		
+		layout.add ( lbl_map_width, 2, 2 );
+		layout.add ( txt_map_width, 3, 2 );
+		
+		layout.add ( lbl_island_density, 2, 3 );
+		layout.add ( txt_island_density, 3, 3 );
+		
+		layout.add ( lbl_island_size, 2, 4 );
+		layout.add ( txt_island_size, 3, 4 );
+		
+		layout.add ( btn_generate_map, 3, 5 );
+		layout.add ( btn_save_terrain, 3, 6 );
+
 		//layout.setGridLinesVisible ( true );
-		
+
 		primaryStage.setScene ( new Scene ( layout, 1280, 720 ) );
 		primaryStage.show ( );
 	}
-	
+
 	private void CreateMap ( GraphicsContext gc ) 
 	{
-		Noise.Shuffle();
+		gc.clearRect(0, 0, 500, 500);
 		
+		RetrieveProperties (  );
+
+		Noise.Shuffle();
+
 		double w = 500;
 		double h = 500;
-		
-		BufferedImage bi = new BufferedImage (500, 500, BufferedImage.TYPE_INT_RGB);
-		
+
 		for ( int x = 0; x < w; x++ )
 			for ( int y = 0; y < h; y++ )
 			{
 				double dx = ( double ) x / w;
 				double dy = ( double ) y / h;
-				double val = IslandHeight * Noise.Perlin ( IslandDensity * dx, IslandDensity * dy );
 
-				val = ( val - 1 ) / 2;
+				double val = IslandSize * Noise.Perlin( IslandDensity * dx, IslandDensity * dy ) 
+						+ ( IslandSize * dx ) * Noise.Perlin ( IslandDensity * dx, IslandDensity * dy ) 
+						+ ( IslandSize * dx ) * Noise.Perlin( IslandDensity * dx, IslandDensity * dy );
 				
-				if ( val < 0 )
-					gc.getPixelWriter().setColor(x, y, Color.BLUE);		// Blue Color = Water
-				else if ( val > 0.5 )
-					gc.getPixelWriter().setColor(x, y, Color.GREEN);	//	Green Color = Grass
-				else if ( val > 0 )
-					gc.getPixelWriter().setColor(x, y, Color.YELLOW);	// Yellow Color = Sand
+				val = ( val + 1 ) / 2;
+
+				if ( val < 0.1 )
+					gc.getPixelWriter().setColor(x, y, Color.AQUA);			//	Aqua Color = Water
+				else if ( val < 0.2 )
+					gc.getPixelWriter().setColor(x, y, Color.YELLOW);		//  Yellow Color = Sand
+				else if ( val < 0.3 )
+					gc.getPixelWriter().setColor(x, y, Color.GREENYELLOW);	//	Green Color = Grass
+				else if ( val < 0.5 )
+					gc.getPixelWriter().setColor(x, y, Color.DARKGREEN);
+				else if ( val < 0.7 )
+					gc.getPixelWriter().setColor(x, y, Color.SANDYBROWN);
+				else if ( val < 0.8 )
+					gc.getPixelWriter().setColor(x, y, Color.DARKGOLDENROD);
+				else if ( val < 0.9 )
+					gc.getPixelWriter().setColor( x, y, Color.SLATEGRAY); 	//	Slate Color = Rock
+				else if ( val > 1.0 )
+					gc.getPixelWriter().setColor(x, y, Color.GAINSBORO);
 			}
+	}
+	
+	private void RetrieveProperties (  ) 
+	{
+		if ( !txt_map_height.getText (  ).isEmpty (  ) )
+			MapHeight = Integer.parseInt ( txt_map_height.getText (  ) );
 		
-		//Image image = SwingFXUtils.toFXImage(bi, null);
-		//view.setImage(image);
+		if ( !txt_map_width.getText (  ).isEmpty (  ) )
+			MapWidth = Integer.parseInt ( txt_map_width.getText (  ) );
+		
+		if ( !txt_island_density.getText (  ).isEmpty (  ) )
+			IslandDensity = Float.parseFloat( txt_island_density.getText (  ) );
+		
+		if ( !txt_island_size.getText (  ).isEmpty (  ) )
+			IslandSize = Float.parseFloat ( txt_island_size.getText (  ) );
+	}
+	
+	private void SaveToFile ( Canvas terrain_canvas ) 
+	{
+		
 	}
 }
